@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#ea580c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <title>Ruta Arancelaria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script>
+        const ICONS = {
+            pencil: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
+            "trash-2": '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>',
+            check: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+            "check-circle": '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+            "refresh-cw": '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+            list: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+            "file-spreadsheet": '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg>',
+            "clipboard-x": '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="10" y1="11" x2="14" y2="15"/><line x1="14" y1="11" x2="10" y2="15"/></svg>',
+            "arrow-left": '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
+            dumbbell: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 9.5h3v5H3z"/><path d="M18 9.5h3v5h-3z"/><path d="M6 6.5v11"/><path d="M18 6.5v11"/></svg>',
+            download: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+        };
+        const lucide = {
+            createIcons: function () {
+                document.querySelectorAll("[data-lucide]").forEach(function (el) {
+                    var name = el.getAttribute("data-lucide");
+                    if (ICONS[name]) {
+                        var tmp = document.createElement("div");
+                        tmp.innerHTML = ICONS[name];
+                        var svg = tmp.firstElementChild;
+                        svg.style.display = "inline-block";
+                        svg.style.verticalAlign = "middle";
+                        el.parentNode.replaceChild(svg, el);
+                    }
+                });
+            }
+        };
+    </script>
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #ea580c 0%, #1c1917 100%);
+            min-height: 100vh;
+            color: #1f2937;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.267);
+        }
+
+        /* Botones de Categoría */
+        .category-btn {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+        }
+
+        .category-btn:active {
+            transform: scale(0.98);
+            background: #f3f4f6;
+        }
+
+        .category-btn.selected {
+            border-color: #ea580c;
+            background: #fff7ed;
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+        }
+
+        /* Botón Principal */
+        .btn-primary {
+            background: linear-gradient(135deg, #ea580c 0%, #1c1917 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            width: 100%;
+            border: none;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Tabs (Pestañas) */
+        .tab {
+            flex: 1;
+            padding: 16px 8px;
+            text-align: center;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            color: white;
+            border-bottom-color: white;
+        }
+
+        /* Inputs */
+        input[type="date"],
+        input[type="number"],
+        input[type="text"] {
+            font-size: 16px;
+            padding: 14px;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #ea580c;
+        }
+
+        /* Animaciones */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Capa de fondo Modal */
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+        }
+
+        /* Notificación Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1f2937;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="min-h-screen pb-20">
+        <!-- Encabezado -->
+        <div class="bg-gradient-to-r from-orange-600 to-stone-900 text-white p-6 shadow-lg relative">
+            <h1 class="text-2xl font-bold text-center flex items-center justify-center gap-2">
+                <i data-lucide="dumbbell"></i> Ruta Arancelaria
+            </h1>
+
+        </div>
+
+        <!-- Navegación por Pestañas -->
+        <div class="flex bg-gradient-to-r from-orange-600 to-stone-900 sticky top-0 z-40 shadow-md">
+            <button class="tab active" data-tab="input">➕ Añadir</button>
+            <button class="tab" data-tab="summary">📊 Resumen</button>
+            <button class="tab" data-tab="history">📅 Historial</button>
+            <button class="tab" data-tab="config">⚙️ Config</button>
+        </div>
+
+        <!-- SECCIÓN 1: AÑADIR PARTIDO -->
+        <div id="section-input" class="section p-4 fade-in">
+            <!-- Selector de Fecha -->
+            <div class="glass rounded-2xl p-5 mb-4 shadow-lg">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Fecha del Partido</label>
+                <input type="date" id="input-date">
+            </div>
+
+            <!-- Lista de Categorías -->
+            <div class="glass rounded-2xl p-5 mb-4 shadow-lg">
+                <div class="flex justify-between items-center mb-3">
+                    <label class="font-semibold text-gray-700">Seleccionar Categoría</label>
+                    <button id="refresh-categories" class="text-orange-600 text-sm font-medium hover:underline">
+                        🔄 Actualizar
+                    </button>
+                </div>
+                <div id="categories-container" class="max-h-96 overflow-y-auto pr-1">
+                    <!-- Se inyecta con JS -->
+                </div>
+            </div>
+
+            <!-- Área de Acción (Botón Flotante) -->
+            <div id="action-area"
+                class="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur border-t z-30 transform transition-transform duration-300 translate-y-full safe-area-bottom">
+                <div class="max-w-md mx-auto">
+                    <div class="flex justify-between items-end mb-3">
+                        <span class="text-gray-600 text-sm">Pago:</span>
+                        <span id="selected-payment" class="text-3xl font-bold text-green-600">$0</span>
+                    </div>
+                    <button id="save-btn" class="btn-primary flex justify-center items-center gap-2">
+                        <span>Guardar Partido</span>
+                        <i data-lucide="check-circle" width="20"></i>
+                    </button>
+                    <button id="cancel-edit-btn" class="mt-2 w-full text-gray-500 py-2 hidden">Cancelar Edición</button>
+                </div>
+            </div>
+
+            <!-- Lista Partidos Mes Actual -->
+            <div class="glass rounded-2xl p-5 mb-16 shadow-lg">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i data-lucide="list"></i> Partidos de Este Mes
+                </h3>
+                <div id="matches-list" class="space-y-3">
+                    <!-- Se inyecta con JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: RESUMEN -->
+        <div id="section-summary" class="section p-4 hidden fade-in">
+            <!-- Selector de Retención Mensual -->
+            <div class="glass rounded-2xl p-4 mb-4 shadow-lg">
+                <label class="block text-sm font-semibold text-gray-700 mb-3">Retención del mes</label>
+                <div class="flex gap-3">
+                    <button id="ret-btn-0"
+                        class="flex-1 py-3 rounded-xl font-bold text-sm border-2 border-gray-300 bg-white text-gray-700 transition-all">0%</button>
+                    <button id="ret-btn-5"
+                        class="flex-1 py-3 rounded-xl font-bold text-sm border-2 border-orange-500 bg-orange-500 text-white transition-all">5%</button>
+                    <button id="ret-btn-7"
+                        class="flex-1 py-3 rounded-xl font-bold text-sm border-2 border-gray-300 bg-white text-gray-700 transition-all">7%</button>
+                </div>
+            </div>
+            <!-- Tarjetas de Totales -->
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="glass p-3 rounded-xl text-center">
+                    <div class="text-xs text-gray-500 uppercase font-bold">Partidos</div>
+                    <div id="sum-count" class="text-2xl font-bold text-orange-600">0</div>
+                </div>
+                <div class="glass p-3 rounded-xl text-center">
+                    <div class="text-xs text-gray-500 uppercase font-bold">Bruto</div>
+                    <div id="sum-gross" class="text-2xl font-bold text-green-600">$0</div>
+                </div>
+                <div class="glass p-3 rounded-xl text-center">
+                    <div class="text-xs text-gray-500 uppercase font-bold">Retención</div>
+                    <div id="sum-ret" class="text-2xl font-bold text-red-500">$0</div>
+                </div>
+                <!-- Card Neto destacada -->
+                <div
+                    class="bg-gradient-to-br from-orange-100 to-amber-200 p-3 rounded-xl text-center border-2 border-orange-400 shadow-orange-200 shadow-lg">
+                    <div class="text-xs text-orange-800 uppercase font-bold">Total Neto</div>
+                    <div id="sum-net" class="text-2xl font-extrabold text-orange-900">$0</div>
+                </div>
+            </div>
+
+            <!-- Desglose por Categoría -->
+            <div class="glass rounded-2xl p-5 shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">Desglose por Categoría</h3>
+                    <button id="export-btn" class="text-orange-600 text-sm font-medium flex items-center gap-1">
+                        <i data-lucide="download" width="16"></i> Exportar
+                    </button>
+                </div>
+                <div id="summary-breakdown" class="space-y-4">
+                    <!-- Se inyecta con JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: HISTORIAL -->
+        <div id="section-history" class="section p-4 hidden fade-in">
+            <div class="glass rounded-2xl p-5 shadow-lg mb-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">Historial</h3>
+                    <button id="export-selected-btn"
+                        class="hidden bg-orange-500 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-orange-600 transition-colors shadow">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="8" y1="13" x2="16" y2="13" />
+                            <line x1="8" y1="17" x2="16" y2="17" />
+                            <line x1="8" y1="9" x2="10" y2="9" />
+                        </svg>
+                        Exportar seleccionados (<span id="export-selected-count">0</span>)
+                    </button>
+                </div>
+                <div id="history-months-list" class="space-y-2"></div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 4: CONFIGURACIÓN -->
+        <div id="section-config" class="section p-4 hidden fade-in">
+            <div class="glass rounded-2xl p-5 shadow-lg mb-4">
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Precios y Categorías</h3>
+                <p class="text-sm text-gray-500 mb-4">Ajusta los valores de cada categoría aquí.</p>
+
+                <div id="config-list" class="space-y-3">
+                    <!-- Config items inyectados -->
+                </div>
+
+                <button id="add-category-btn"
+                    class="mt-4 w-full py-3 border-2 border-dashed border-orange-300 text-orange-600 rounded-xl font-medium hover:bg-orange-50 transition-colors">
+                    + Agregar Nueva Categoría
+                </button>
+            </div>
+
+            <div class="text-center text-xs text-gray-400 mt-8">
+                Versión 2.0 - Almacenamiento Local
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL (Genérico) -->
+    <div id="modal"
+        class="modal-overlay fixed inset-0 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-300"
+            id="modal-content">
+            <h3 id="modal-title" class="text-xl font-bold mb-2">Título</h3>
+            <p id="modal-body" class="text-gray-600 mb-6">Mensaje...</p>
+            <div class="flex gap-3 justify-end">
+                <button id="modal-cancel"
+                    class="px-4 py-2 rounded-lg text-gray-600 font-medium hover:bg-gray-100">Cancelar</button>
+                <button id="modal-confirm"
+                    class="px-4 py-2 rounded-lg bg-orange-600 text-white font-medium hover:bg-orange-700">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR CATEGORÍA -->
+    <div id="modal-cat" class="modal-overlay fixed inset-0 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 id="modal-cat-title" class="text-lg font-bold mb-4">Editar Categoría</h3>
+            <div class="mb-3">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre</label>
+                <input type="text" id="edit-cat-name" placeholder="Ej: U17">
+            </div>
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Precio</label>
+                <input type="number" id="edit-cat-price" placeholder="Ej: 18000" min="0" step="100">
+            </div>
+            <div class="flex gap-3">
+                <button id="cancel-cat-btn"
+                    class="flex-1 py-3 text-gray-600 bg-gray-100 rounded-xl font-medium">Cancelar</button>
+                <button id="save-cat-btn"
+                    class="flex-1 py-3 bg-orange-600 text-white rounded-xl font-medium shadow-lg shadow-orange-200">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST (Notificación) -->
+    <div id="toast" class="toast">
+        <i data-lucide="check" width="18"></i>
+        <span id="toast-msg">Acción realizada</span>
+    </div>
+
+    <script>
+        // ==========================================
+        // DATOS POR DEFECTO
+        // ==========================================
+        const CATEGORIAS_POR_DEFECTO = [
+            { id: 1, name: "U13", payment: 22000 },
+            { id: 2, name: "U14", payment: 22000 },
+            { id: 3, name: "U15", payment: 22000 },
+            { id: 4, name: "U17", payment: 25000 },
+            { id: 5, name: "U19/U21", payment: 28000 },
+            { id: 6, name: "1ra A", payment: 37000 },
+            { id: 7, name: "1ra B", payment: 33000 },
+            { id: 8, name: "2DA/INTERMEDIA/SENIOR", payment: 37000 },
+            { id: 9, name: "1ra FEM", payment: 29000 },
+            { id: 10, name: "PREMINI", payment: 12000 },
+            { id: 11, name: "MINI B/MINI FEM", payment: 15000 },
+            { id: 12, name: "MINI A(U11)", payment: 18000 },
+            { id: 13, name: "Escuela De Menores", payment: 19000 },
+            { id: 14, name: "Escuela De Mayores", payment: 22000 },
+            { id: 15, name: "Escuela De MINI/PREMINI", payment: 12000 },
+            { id: 16, name: "PROV U11", payment: 21000 },
+            { id: 17, name: "PROV U13", payment: 26000 },
+            { id: 18, name: "PROV U15", payment: 26000 },
+            { id: 19, name: "PROV U17", payment: 30000 },
+            { id: 20, name: "PROV U21", payment: 33000 }
+        ];
+
+        // ==========================================
+        // ESTADO DE LA APLICACIÓN
+        // ==========================================
+        class EstadoAplicacion {
+            constructor() {
+                this.claveAlmacenamiento = 'basquetMatches_v3';
+                this.claveConfiguracion = 'basquetConfig_v1';
+                this.partidos = {};
+                this.categorias = [];
+                this.cargar();
+            }
+
+            cargar() {
+                try {
+                    const d = localStorage.getItem(this.claveAlmacenamiento);
+                    this.partidos = d ? JSON.parse(d) : {};
+                    if (!d && localStorage.getItem('basquetMatchesARS_v2')) {
+                        this.partidos = JSON.parse(localStorage.getItem('basquetMatchesARS_v2'));
+                    }
+                } catch (e) { this.partidos = {}; }
+                try {
+                    const c = localStorage.getItem(this.claveConfiguracion);
+                    this.categorias = c ? JSON.parse(c) : [...CATEGORIAS_POR_DEFECTO];
+                } catch (e) { this.categorias = [...CATEGORIAS_POR_DEFECTO]; }
+            }
+
+            guardar() { localStorage.setItem(this.claveAlmacenamiento, JSON.stringify(this.partidos)); }
+            guardarConfiguracion() { localStorage.setItem(this.claveConfiguracion, JSON.stringify(this.categorias)); }
+
+            obtenerPartidos(claveMes) { return this.partidos[claveMes] || []; }
+
+            agregarPartido(fecha, categoria, pago) {
+                const claveMes = fecha.substring(0, 7);
+                const p = { id: Date.now(), date: fecha, category: categoria, payment: parseInt(pago) };
+                if (!this.partidos[claveMes]) this.partidos[claveMes] = [];
+                this.partidos[claveMes].push(p);
+                this.guardar();
+                return p;
+            }
+
+            eliminarPartido(id, claveMes) {
+                if (!this.partidos[claveMes]) return;
+                this.partidos[claveMes] = this.partidos[claveMes].filter(p => p.id !== id);
+                this.guardar();
+            }
+
+            actualizarPartido(id, claveMes, nuevaFecha, nuevaCat, nuevoPago) {
+                const lista = this.partidos[claveMes];
+                if (!lista) return;
+                const idx = lista.findIndex(p => p.id === id);
+                if (idx === -1) return;
+                const nuevaMes = nuevaFecha.substring(0, 7);
+                if (nuevaMes !== claveMes) {
+                    this.eliminarPartido(id, claveMes);
+                    this.agregarPartido(nuevaFecha, nuevaCat, nuevoPago);
+                } else {
+                    lista[idx].date = nuevaFecha;
+                    lista[idx].category = nuevaCat;
+                    lista[idx].payment = parseInt(nuevoPago);
+                    this.guardar();
+                }
+            }
+
+            actualizarCategoria(nombreAnterior, nuevoNombre, nuevoPrecio) {
+                const idx = this.categorias.findIndex(c => c.name === nombreAnterior);
+                if (idx !== -1) {
+                    this.categorias[idx].name = nuevoNombre;
+                    this.categorias[idx].payment = parseInt(nuevoPrecio);
+                    this.guardarConfiguracion();
+                }
+            }
+
+            agregarCategoria(nombre, precio) {
+                this.categorias.push({ id: Date.now(), name: nombre, payment: parseInt(precio) });
+                this.guardarConfiguracion();
+            }
+
+            eliminarCategoria(nombre) {
+                this.categorias = this.categorias.filter(c => c.name !== nombre);
+                this.guardarConfiguracion();
+            }
+        }
+
+        // ==========================================
+        // INTERFAZ DE USUARIO
+        // ==========================================
+        class InterfazUsuario {
+            constructor(estado) {
+                this.estado = estado;
+                this.categoriaSeleccionada = null;
+                this.idPartidoEditando = null;
+                this.retencionPorcentaje = 5;
+                this.mesActual = new Date().toISOString().substring(0, 7);
+
+                this.el = {
+                    inputFecha: document.getElementById('input-date'),
+                    contenedorCat: document.getElementById('categories-container'),
+                    listaPartidos: document.getElementById('matches-list'),
+                    areaAccion: document.getElementById('action-area'),
+                    botonGuardar: document.getElementById('save-btn'),
+                    botonCancelar: document.getElementById('cancel-edit-btn'),
+                    displayPago: document.getElementById('selected-payment'),
+                    sumaCantidad: document.getElementById('sum-count'),
+                    sumaBruto: document.getElementById('sum-gross'),
+                    sumaRet: document.getElementById('sum-ret'),
+                    sumaNeto: document.getElementById('sum-net'),
+                    listaConfig: document.getElementById('config-list'),
+                    modal: document.getElementById('modal'),
+                    contenidoModal: document.getElementById('modal-content'),
+                };
+
+                this.iniciar();
+            }
+
+            iniciar() {
+                // Configurar fecha máxima (hoy) para el input
+                const hoy = new Date().toISOString().split('T')[0];
+                this.el.inputFecha.setAttribute('max', hoy);
+                this.el.inputFecha.valueAsDate = new Date();
+
+                document.querySelectorAll('.tab').forEach(btn => {
+                    btn.addEventListener('click', e => this.cambiarPestana(e.target.dataset.tab));
+                });
+
+                this.el.botonGuardar.addEventListener('click', () => this.manejarGuardado());
+                this.el.botonCancelar.addEventListener('click', () => this.reiniciarEntrada());
+                document.getElementById('refresh-categories').addEventListener('click', () => this.renderizarCategorias());
+                document.getElementById('add-category-btn').addEventListener('click', () => this.abrirModalCategoria());
+                document.getElementById('save-cat-btn').addEventListener('click', () => this.guardarModalCategoria());
+                document.getElementById('cancel-cat-btn').addEventListener('click', () => this.cerrarModal('modal-cat'));
+                document.getElementById('export-btn').addEventListener('click', () => this.exportar(this.mesActual));
+
+
+                // Ocultar botón flotante al abrir teclado en móviles
+                window.addEventListener('resize', () => {
+                    if (document.activeElement.tagName === 'INPUT' && window.innerHeight < 500) {
+                        this.el.areaAccion.classList.add('hidden');
+                    } else if (this.categoriaSeleccionada) {
+                        this.el.areaAccion.classList.remove('hidden');
+                    }
+                });
+
+                this.actualizarEncabezadoMes();
+                this.renderizarCategorias();
+                this.renderizarPartidos();
+                lucide.createIcons();
+            }
+
+            // ── Navegación ──────────────────────────────────────────────────
+            cambiarPestana(id) {
+                document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
+                document.getElementById('section-' + id).classList.remove('hidden');
+                document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+                document.querySelector(`.tab[data-tab="${id}"]`).classList.add('active');
+                if (id === 'summary') {
+                    this._retListenersInit = this._retListenersInit || (() => {
+                        document.getElementById('ret-btn-0').addEventListener('click', () => this.seleccionarRetencion(0));
+                        document.getElementById('ret-btn-5').addEventListener('click', () => this.seleccionarRetencion(5));
+                        document.getElementById('ret-btn-7').addEventListener('click', () => this.seleccionarRetencion(7));
+                        return true;
+                    })();
+                    this.renderizarResumen();
+                }
+                if (id === 'history') this.renderizarHistorial();
+                if (id === 'config') this.renderizarConfiguracion();
+            }
+
+            // ── Retención mensual ───────────────────────────────────────────
+            seleccionarRetencion(pct) {
+                this.retencionPorcentaje = pct;
+                const active = 'flex-1 py-3 rounded-xl font-bold text-sm border-2 transition-all border-orange-500 bg-orange-500 text-white';
+                const inactive = 'flex-1 py-3 rounded-xl font-bold text-sm border-2 transition-all border-gray-300 bg-white text-gray-700';
+                document.getElementById('ret-btn-0').className = pct === 0 ? active : inactive;
+                document.getElementById('ret-btn-5').className = pct === 5 ? active : inactive;
+                document.getElementById('ret-btn-7').className = pct === 7 ? active : inactive;
+                this.renderizarResumen();
+            }
+
+            // ── Categorías ──────────────────────────────────────────────────
+            renderizarCategorias() {
+                this.el.contenedorCat.innerHTML = '';
+                const fragment = document.createDocumentFragment();
+                this.estado.categorias.forEach(cat => {
+                    const btn = document.createElement('div');
+                    btn.className = `category-btn flex justify-between items-center ${this.categoriaSeleccionada?.name === cat.name ? 'selected' : ''}`;
+                    btn.innerHTML = `<div class="font-semibold text-gray-800">${cat.name}</div>
+                                     <div class="font-bold text-orange-600">${this.fmt(cat.payment)}</div>`;
+                    btn.onclick = () => this.seleccionarCategoria(cat, btn);
+                    fragment.appendChild(btn);
+                });
+                this.el.contenedorCat.appendChild(fragment);
+            }
+
+            seleccionarCategoria(cat, btnEl) {
+                this.categoriaSeleccionada = cat;
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
+                btnEl.classList.add('selected');
+                this.el.displayPago.textContent = this.fmt(cat.payment);
+                this.el.areaAccion.classList.remove('translate-y-full');
+            }
+
+            // ── Partidos ────────────────────────────────────────────────────
+            renderizarPartidos() {
+                const partidos = this.estado.obtenerPartidos(this.mesActual);
+                const cont = this.el.listaPartidos;
+                cont.innerHTML = '';
+
+                if (partidos.length === 0) {
+                    cont.innerHTML = `<div class="text-center text-gray-400 py-8 flex flex-col items-center">
+                        ${ICONS['clipboard-x']}<span class="mt-2">No hay partidos este mes</span></div>`;
+                    return;
+                }
+
+                const fragment = document.createDocumentFragment();
+                [...partidos].sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(p => {
+                    const fecha = new Date(p.date + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+
+                    const el = document.createElement('div');
+                    el.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center fade-in';
+                    el.innerHTML = `
+                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                            <div class="bg-orange-100 text-orange-700 font-bold rounded-lg px-3 py-2 text-xs shrink-0">${fecha}</div>
+                            <div class="min-w-0">
+                                <div class="font-bold text-gray-800 truncate">${p.category}</div>
+                                <div class="text-xs text-green-600 font-bold">${this.fmt(p.payment)}</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 ml-2 shrink-0">
+                            <button class="btn-edit p-2 text-gray-400 hover:text-orange-600 bg-gray-50 hover:bg-orange-50 rounded-lg transition-colors">${ICONS['pencil']}</button>
+                            <button class="btn-del p-2 text-gray-400 hover:text-red-600 bg-gray-50 hover:bg-red-50 rounded-lg transition-colors">${ICONS['trash-2']}</button>
+                        </div>`;
+                    el.querySelector('.btn-edit').addEventListener('click', () => this.iniciarEdicion(p.id));
+                    el.querySelector('.btn-del').addEventListener('click', () => this.confirmarEliminacion(p.id));
+                    fragment.appendChild(el);
+                });
+                cont.appendChild(fragment);
+            }
+
+            // ── Guardar / Editar ────────────────────────────────────────────
+            manejarGuardado() {
+                const fecha = this.el.inputFecha.value;
+                if (!fecha || !this.categoriaSeleccionada) { this.mostrarToast('⚠️ Faltan datos'); return; }
+
+                const mes = fecha.substring(0, 7);
+                this.mesActual = mes;
+                this.actualizarEncabezadoMes();
+
+                if (this.idPartidoEditando) {
+                    this.estado.actualizarPartido(this.idPartidoEditando, mes, fecha,
+                        this.categoriaSeleccionada.name, this.categoriaSeleccionada.payment);
+                    this.mostrarToast('✅ Partido actualizado');
+                } else {
+                    this.estado.agregarPartido(fecha, this.categoriaSeleccionada.name,
+                        this.categoriaSeleccionada.payment);
+                    this.mostrarToast('✅ Partido guardado');
+                }
+                this.reiniciarEntrada();
+                this.renderizarPartidos();
+            }
+
+            reiniciarEntrada() {
+                this.categoriaSeleccionada = null;
+                this.idPartidoEditando = null;
+                this.el.areaAccion.classList.add('translate-y-full');
+                this.el.botonCancelar.classList.add('hidden');
+                this.el.botonGuardar.innerHTML = `<span>Guardar Partido</span> ${ICONS['check-circle']}`;
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
+            }
+
+            iniciarEdicion(id) {
+                const partido = this.estado.obtenerPartidos(this.mesActual).find(p => p.id === id);
+                if (!partido) return;
+
+                this.el.inputFecha.value = partido.date;
+                this.idPartidoEditando = id;
+
+                const cat = this.estado.categorias.find(c => c.name === partido.category) || { name: partido.category, payment: partido.payment };
+                this.categoriaSeleccionada = cat;
+                this.renderizarCategorias();
+
+                this.el.displayPago.textContent = this.fmt(partido.payment);
+                this.el.areaAccion.classList.remove('translate-y-full');
+                this.el.botonCancelar.classList.remove('hidden');
+                this.el.botonGuardar.innerHTML = `<span>Actualizar Partido</span> ${ICONS['refresh-cw']}`;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            confirmarEliminacion(id) {
+                this.mostrarModal('¿Eliminar partido?', 'Esta acción no se puede deshacer.', () => {
+                    this.estado.eliminarPartido(id, this.mesActual);
+                    this.renderizarPartidos();
+                    this.mostrarToast('Partido eliminado');
+                });
+            }
+
+            // ── Resumen ─────────────────────────────────────────────────────
+            renderizarResumen() {
+                const stats = this.calcularStats(this.estado.obtenerPartidos(this.mesActual));
+                this.el.sumaCantidad.textContent = stats.cantidad;
+                this.el.sumaBruto.textContent = this.fmt(stats.bruto);
+                this.el.sumaRet.textContent = this.fmt(stats.ret);
+                this.el.sumaNeto.textContent = this.fmt(stats.neto);
+
+                const cont = document.getElementById('summary-breakdown');
+                cont.innerHTML = '';
+                const fragment = document.createDocumentFragment();
+                Object.entries(stats.porCat).forEach(([nombre, d]) => {
+                    const fila = document.createElement('div');
+                    fila.className = 'flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100';
+                    fila.innerHTML = `
+                        <div>
+                            <div class="font-semibold text-gray-800">${nombre}</div>
+                            <div class="text-xs text-gray-500">${d.cantidad} partido${d.cantidad !== 1 ? 's' : ''}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-green-600">${this.fmt(d.bruto)}</div>
+                        </div>`;
+                    fragment.appendChild(fila);
+                });
+                cont.appendChild(fragment);
+            }
+
+            calcularStats(partidos, pctMes) {
+                const pctUsar = pctMes !== undefined ? pctMes : this.retencionPorcentaje;
+                const stats = { cantidad: 0, bruto: 0, ret: 0, neto: 0, porCat: {} };
+                (partidos || []).forEach(p => {
+                    stats.cantidad++;
+                    stats.bruto += p.payment;
+                    if (!stats.porCat[p.category]) stats.porCat[p.category] = { cantidad: 0, bruto: 0 };
+                    stats.porCat[p.category].cantidad++;
+                    stats.porCat[p.category].bruto += p.payment;
+                });
+                stats.ret = Math.round(stats.bruto * pctUsar / 100);
+                stats.neto = stats.bruto - stats.ret;
+                return stats;
+            }
+
+            // ── Historial ───────────────────────────────────────────────────
+            mesesSeleccionados = new Set();
+
+            renderizarHistorial() {
+                const lista = document.getElementById('history-months-list');
+                lista.innerHTML = '';
+                this.mesesSeleccionados.clear();
+                this._actualizarBotonExportar();
+                const meses = Object.keys(this.estado.partidos).sort().reverse();
+                if (meses.length === 0) {
+                    lista.innerHTML = '<div class="text-center text-gray-400 py-6">No hay historial guardado</div>';
+                    return;
+                }
+                const fragment = document.createDocumentFragment();
+                meses.forEach(claveMes => {
+                    const partidos = this.estado.partidos[claveMes];
+                    const stats = this.calcularStats(partidos, this.retencionPorcentaje);
+                    const item = document.createElement('div');
+                    item.className = 'bg-white p-4 rounded-xl border-2 border-gray-200 flex items-center gap-3 cursor-pointer transition-all select-none';
+                    item.innerHTML = `
+                        <div class="w-6 h-6 rounded-lg border-2 border-gray-300 flex items-center justify-center flex-shrink-0 check-box transition-all">
+                            <svg class="check-icon hidden" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-bold text-lg">${this.fmtMes(claveMes)}</div>
+                            <div class="text-sm text-gray-500">${stats.cantidad} partidos · Neto: <span class="font-bold text-green-600">${this.fmt(stats.neto)}</span></div>
+                        </div>`;
+                    item.addEventListener('click', () => {
+                        const box = item.querySelector('.check-box');
+                        const icon = item.querySelector('.check-icon');
+                        if (this.mesesSeleccionados.has(claveMes)) {
+                            this.mesesSeleccionados.delete(claveMes);
+                            box.classList.remove('bg-orange-500', 'border-orange-500');
+                            icon.classList.add('hidden');
+                            item.classList.remove('border-orange-400', 'bg-orange-50');
+                            item.classList.add('border-gray-200');
+                        } else {
+                            this.mesesSeleccionados.add(claveMes);
+                            box.classList.add('bg-orange-500', 'border-orange-500');
+                            icon.classList.remove('hidden');
+                            item.classList.add('border-orange-400', 'bg-orange-50');
+                            item.classList.remove('border-gray-200');
+                        }
+                        this._actualizarBotonExportar();
+                    });
+                    fragment.appendChild(item);
+                });
+                lista.appendChild(fragment);
+
+                document.getElementById('export-selected-btn').onclick = () => this.exportarSeleccionados();
+            }
+
+            _actualizarBotonExportar() {
+                const btn = document.getElementById('export-selected-btn');
+                const cnt = document.getElementById('export-selected-count');
+                if (!btn) return;
+                const n = this.mesesSeleccionados.size;
+                cnt.textContent = n;
+                if (n > 0) btn.classList.remove('hidden');
+                else btn.classList.add('hidden');
+            }
+
+            exportarSeleccionados() {
+                const btn = document.getElementById('export-selected-btn');
+                const btnOriginalHTML = btn.innerHTML;
+                btn.innerHTML = `<i data-lucide="refresh-cw" width="16" class="animate-spin"></i> Exportando...`;
+                btn.disabled = true;
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    const meses = [...this.mesesSeleccionados].sort();
+                    if (!meses.length) {
+                        btn.innerHTML = btnOriginalHTML;
+                        btn.disabled = false;
+                        return;
+                    }
+                    const wb = XLSX.utils.book_new();
+
+                    meses.forEach(claveMes => {
+                        const partidos = this.estado.obtenerPartidos(claveMes);
+                        if (!partidos.length) return;
+                        const stats = this.calcularStats(partidos, this.retencionPorcentaje);
+                        const nombreMes = this.fmtMes(claveMes);
+                        const partOrd = [...partidos].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                        const wsRes = this._crearHojaResumen(stats, partOrd, nombreMes, 'Res ' + claveMes);
+                        XLSX.utils.book_append_sheet(wb, wsRes, ('Res ' + claveMes).substring(0, 31));
+
+                        const wsDet = this._crearHojaDetalle(partOrd, 'Det ' + claveMes);
+                        XLSX.utils.book_append_sheet(wb, wsDet, ('Det ' + claveMes).substring(0, 31));
+                    });
+
+                    const label = meses.length === 1 ? meses[0] : `${meses.length}_meses`;
+                    XLSX.writeFile(wb, `Pagos_Basquet_${label}.xlsx`);
+                    this.mostrarToast('📊 Excel descargado');
+
+                    btn.innerHTML = btnOriginalHTML;
+                    btn.disabled = false;
+                    lucide.createIcons();
+                }, 100);
+            }
+
+            // ── Configuración ───────────────────────────────────────────────
+            renderizarConfiguracion() {
+                const lista = this.el.listaConfig;
+                lista.innerHTML = '';
+                const fragment = document.createDocumentFragment();
+                this.estado.categorias.forEach(cat => {
+                    const item = document.createElement('div');
+                    item.className = 'flex justify-between items-center bg-white p-3 rounded-lg border border-gray-200';
+                    item.innerHTML = `
+                        <div>
+                            <div class="font-semibold">${cat.name}</div>
+                            <div class="text-sm text-green-600 font-bold">${this.fmt(cat.payment)}</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="btn-edit p-2 text-gray-400 hover:text-orange-600 bg-gray-50 hover:bg-orange-50 rounded-lg transition-colors">${ICONS['pencil']}</button>
+                            <button class="btn-del p-2 text-gray-400 hover:text-red-600 bg-gray-50 hover:bg-red-50 rounded-lg transition-colors">${ICONS['trash-2']}</button>
+                        </div>`;
+                    item.querySelector('.btn-edit').addEventListener('click', () => this.abrirEditarCategoria(cat.name, cat.payment));
+                    item.querySelector('.btn-del').addEventListener('click', () => this.eliminarCategoria(cat.name));
+                    fragment.appendChild(item);
+                });
+                lista.appendChild(fragment);
+            }
+
+            _catEditando = null;
+
+            abrirEditarCategoria(nombre, precio) {
+                this._catEditando = nombre;
+                document.getElementById('modal-cat-title').textContent = 'Editar Categoría';
+                document.getElementById('edit-cat-name').value = nombre;
+                document.getElementById('edit-cat-price').value = precio;
+                document.getElementById('modal-cat').classList.remove('hidden');
+            }
+
+            abrirModalCategoria() {
+                this._catEditando = null;
+                document.getElementById('modal-cat-title').textContent = 'Nueva Categoría';
+                document.getElementById('edit-cat-name').value = '';
+                document.getElementById('edit-cat-price').value = '';
+                document.getElementById('modal-cat').classList.remove('hidden');
+            }
+
+            guardarModalCategoria() {
+                const nombre = document.getElementById('edit-cat-name').value.trim();
+                const precio = document.getElementById('edit-cat-price').value;
+                if (!nombre || !precio) { this.mostrarToast('Completa todos los campos'); return; }
+                if (this._catEditando) {
+                    this.estado.actualizarCategoria(this._catEditando, nombre, precio);
+                    this.mostrarToast('Categoría actualizada');
+                } else {
+                    this.estado.agregarCategoria(nombre, precio);
+                    this.mostrarToast('Categoría creada');
+                }
+                this.cerrarModal('modal-cat');
+                this.renderizarConfiguracion();
+                this.renderizarCategorias();
+            }
+
+            eliminarCategoria(nombre) {
+                this.mostrarModal(`¿Borrar "${nombre}"?`, 'Podrás agregarla de nuevo luego.', () => {
+                    this.estado.eliminarCategoria(nombre);
+                    this.renderizarConfiguracion();
+                    this.renderizarCategorias();
+                    this.mostrarToast('Categoría eliminada');
+                });
+            }
+
+            cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+            // ── Exportar ────────────────────────────────────────────────────
+            _crearHojaResumen(stats, partOrd, nombreMes, tituloHoja) {
+                const fechaExp = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
+                const resumenData = [
+                    ['Ruta Arancelaria - ' + nombreMes],
+                    ['Exportado el ' + fechaExp],
+                    [],
+                    ['Partidos', 'Total Bruto', 'Retención (Diferencia)', 'Total Neto'],
+                    [partOrd.length, stats.bruto, stats.ret, stats.neto],
+                    [],
+                    ['DESGLOSE POR CATEGORÍA'],
+                    ['Categoría', 'Partidos', 'Importe'],
+                    ...Object.entries(stats.porCat).map(([nombre, d]) => [nombre, d.cantidad, d.bruto])
+                ];
+                const ws = XLSX.utils.aoa_to_sheet(resumenData);
+                ws['!cols'] = [{ wch: 24 }, { wch: 12 }, { wch: 16 }];
+                return ws;
+            }
+
+            _crearHojaDetalle(partOrd, tituloHoja) {
+                const detalleData = [
+                    ['#', 'Fecha', 'Categoría', 'Importe'],
+                    ...partOrd.map((p, i) => {
+                        const fecha = new Date(p.date + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
+                        return [i + 1, fecha, p.category, p.payment];
+                    })
+                ];
+                const ws = XLSX.utils.aoa_to_sheet(detalleData);
+                ws['!cols'] = [{ wch: 5 }, { wch: 14 }, { wch: 20 }, { wch: 14 }];
+                const numRows = partOrd.length;
+                for (let r = 2; r <= numRows + 1; r++) {
+                    const cell = ws['D' + r];
+                    if (cell) cell.z = '#,##0.00';
+                }
+                return ws;
+            }
+
+            exportar(claveMes) {
+                const btn = document.getElementById('export-btn');
+                const btnOriginalHTML = btn.innerHTML;
+                btn.innerHTML = `<i data-lucide="refresh-cw" width="16" class="animate-spin"></i> Exportando...`;
+                btn.disabled = true;
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    const partidos = this.estado.obtenerPartidos(claveMes);
+                    if (!partidos.length) {
+                        this.mostrarToast('No hay datos para exportar');
+                        btn.innerHTML = btnOriginalHTML;
+                        btn.disabled = false;
+                        return;
+                    }
+                    const stats = this.calcularStats(partidos, this.retencionPorcentaje);
+                    const nombreMes = this.fmtMes(claveMes);
+                    const partOrd = [...partidos].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                    const wb = XLSX.utils.book_new();
+
+                    const wsRes = this._crearHojaResumen(stats, partOrd, nombreMes, 'Resumen');
+                    XLSX.utils.book_append_sheet(wb, wsRes, 'Resumen');
+
+                    const wsDet = this._crearHojaDetalle(partOrd, 'Detalle de Partidos');
+                    XLSX.utils.book_append_sheet(wb, wsDet, 'Detalle de Partidos');
+
+                    XLSX.writeFile(wb, 'Pagos_Basquet_' + claveMes + '.xlsx');
+                    this.mostrarToast('📊 Excel descargado');
+
+                    btn.innerHTML = btnOriginalHTML;
+                    btn.disabled = false;
+                    lucide.createIcons();
+                }, 100);
+            }
+
+            // ── Modales ─────────────────────────────────────────────────────
+            mostrarModal(titulo, cuerpo, alConfirmar) {
+                document.getElementById('modal-title').textContent = titulo;
+                document.getElementById('modal-body').textContent = cuerpo;
+                const m = this.el.modal;
+                const c = this.el.contenidoModal;
+                m.classList.remove('hidden');
+                setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10);
+
+                const ok = document.getElementById('modal-confirm');
+                const cancel = document.getElementById('modal-cancel');
+                const newOk = ok.cloneNode(true); ok.parentNode.replaceChild(newOk, ok);
+                const newCancel = cancel.cloneNode(true); cancel.parentNode.replaceChild(newCancel, cancel);
+                newOk.addEventListener('click', () => { alConfirmar(); this.cerrarModalGenerico(); });
+                newCancel.addEventListener('click', () => this.cerrarModalGenerico());
+            }
+
+            cerrarModalGenerico() {
+                const m = this.el.modal; const c = this.el.contenidoModal;
+                m.classList.add('opacity-0'); c.classList.add('scale-95');
+                setTimeout(() => m.classList.add('hidden'), 300);
+            }
+
+            mostrarToast(msg) {
+                const t = document.getElementById('toast');
+                document.getElementById('toast-msg').textContent = msg;
+                t.classList.add('show');
+                setTimeout(() => t.classList.remove('show'), 3000);
+            }
+
+            // ── Utilidades ──────────────────────────────────────────────────
+            fmt(v) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v); }
+            fmtMes(clave) {
+                const [y, m] = clave.split('-');
+                return new Date(y, m - 1).toLocaleString('es-AR', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
+            }
+            actualizarEncabezadoMes() {
+                // elemento eliminado
+            }
+        }
+
+        // INICIALIZACIÓN
+        const estadoApp = new EstadoAplicacion();
+        const interfazUsuario = new InterfazUsuario(estadoApp);
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js').catch(() => { });
+            });
+        }
+    </script>
+</body>
+
+</html>
